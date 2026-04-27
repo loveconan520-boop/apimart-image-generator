@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 图像生成器 - APIMart</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; color: #ffd700; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #ccc; margin-bottom: 8px; font-weight: 500; }
+        textarea, input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 14px;
+        }
+        textarea { min-height: 120px; resize: vertical; }
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .row { display: flex; gap: 16px; }
+        .col { flex: 1; }
+        button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #1a1a2e;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,215,0,0.3); }
+        .btn-primary:disabled { background: #666; cursor: not-allowed; transform: none; }
+        .quick-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .quick-prompt {
+            padding: 6px 12px;
+            background: rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            color: #ffd700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .quick-prompt:hover { background: rgba(255,215,0,0.2); }
+        .result { text-align: center; }
+        .result img { max-width: 100%; border-radius: 12px; margin-bottom: 16px; }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .loading.active { display: block; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,215,0,0.3);
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffaa00);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .error {
+            background: rgba(255,0,0,0.1);
+            border: 1px solid rgba(255,0,0,0.3);
+            color: #ff6b6b;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            white-space: pre-wrap;
+        }
+        .status-text { color: #888; margin-top: 8px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            width: auto;
+        }
+        .tab.active { background: rgba(255,215,0,0.2); color: #ffd700; }
+        .history { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 20px; }
+        .history-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .history-item:hover { transform: scale(1.02); }
+        .history-item img { width: 100%; height: 150px; object-fit: cover; }
+        .history-item .prompt { padding: 8px; font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .model-info { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 13px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 AI 图像生成器</h1>
+        <p class="subtitle">Powered by APIMart (gpt-image-2 / flux-2-pro)</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('generate')">生成图片</button>
+            <button class="tab" onclick="switchTab('history')">历史记录</button>
+            <button class="tab" onclick="switchTab('config')">API设置</button>
+        </div>
+        
+        <div id="generate-panel">
+            <div class="card">
+                <div class="form-group">
+                    <label>描述你想要的内容</label>
+                    <textarea id="prompt" placeholder="例如：反骨西游海报，孙悟空金甲红袍，手持金箍棒，动漫风格..."></textarea>
+                    <div class="quick-prompts">
+                        <span class="quick-prompt" onclick="setPrompt('孙悟空')">悟空</span>
+                        <span class="quick-prompt" onclick="setPrompt('杨戬')">杨戬</span>
+                        <span class="quick-prompt" onclick="setPrompt('哪吒')">哪吒</span>
+                        <span class="quick-prompt" onclick="setPrompt('反骨西游海报')">反骨西游</span>
+                        <span class="quick-prompt" onclick="setPrompt('天庭场景')">天庭</span>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label>模型</label>
+                            <select id="model">
+                                <option value="flux-2-pro" selected>flux-2-pro (推荐)</option>
+                                <option value="gpt-image-2">gpt-image-2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label>图片尺寸</label>
+                            <select id="size">
+                                <option value="1024x1024">正方形 1024×1024</option>
+                                <option value="1024x1536">竖版 1024×1536</option>
+                                <option value="1536x1024" selected>横版 1536×1024</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" id="generateBtn" onclick="generateImage()">✨ 生成图片</button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p id="loadingText">正在提交任务...</p>
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+                    <p class="status-text" id="statusText">进度: 0%</p>
+                </div>
+            </div>
+            
+            <div class="card result" id="result" style="display: none;">
+                <img id="resultImage" src="" alt="生成结果">
+                <button class="btn-primary" onclick="downloadImage()">⬇️ 下载图片</button>
+            </div>
+            
+            <div class="error" id="error" style="display: none;"></div>
+            
+            <div class="model-info">
+                <strong>💡 提示：</strong><br>
+                • flux-2-pro: 生成速度快，质量高，推荐日常使用<br>
+                • gpt-image-2: OpenAI 官方模型，偶尔会出现 "请稍后再试" 错误<br>
+                • 图片链接有效期 24 小时，请及时下载保存
+            </div>
+        </div>
+        
+        <div id="history-panel" style="display: none;">
+            <div class="card">
+                <h3 style="color: #ffd700; margin-bottom: 16px;">📷 历史记录</h3>
+                <div class="history" id="history"></div>
+            </div>
+        </div>
+        
+        <div id="config-panel" style="display: none;">
+            <div class="card">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">⚙️ API 设置</h3>
+                <div class="form-group">
+                    <label>APIMart API Key</label>
+                    <input type="password" id="apiKey" placeholder="sk-...">
+                    <small style="color: #666; display: block; margin-top: 4px;">从 <a href="https://apimart.ai" target="_blank" style="color: #ffd700;">apimart.ai</a> 获取</small>
+                </div>
+                <button class="btn-primary" onclick="saveConfig()">保存配置</button>
+                
+                <div class="model-info" style="margin-top: 20px;">
+                    <strong>🔧 代理服务器状态：</strong><br>
+                    <span id="proxyStatus">检测中...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://127.0.0.1:3000';
+        let currentImageUrl = '';
+        let currentTaskId = '';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            loadHistory();
+            checkProxyStatus();
+        });
+        
+        function loadConfig() {
+            const apiKey = localStorage.getItem('apimart_api_key');
+            if (apiKey) document.getElementById('apiKey').value = apiKey;
+        }
+        
+        function saveConfig() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) { alert('请输入 API Key'); return; }
+            localStorage.setItem('apimart_api_key', apiKey);
+            alert('✅ API Key 已保存！');
+        }
+        
+        function setPrompt(text) {
+            const prompts = {
+                '孙悟空': '孙悟空角色设定图，金甲红袍，头戴紫金冠，手持如意金箍棒，动漫风格，精细画质',
+                '杨戬': '杨戬角色设定图，银甲战袍，第三只眼，天眼开阔，手持三尖两刃刀，动漫风格',
+                '哪吒': '哪吒角色设定图，混天绫环绕，乾坤圈在手，脚踩风火轮，动漫少年形象',
+                '反骨西游海报': '反骨西游团队海报，悟空、杨戬、哪吒并肩站立，反抗天庭，炫酷动漫风格',
+                '天庭场景': '天庭场景，云雾缭绕，金碧辉煌的建筑，宏伟壮观，东方奇幻风格'
+            };
+            document.getElementById('prompt').value = prompts[text] || text;
+        }
+        
+        function switchTab(tab) {
+            document.getElementById('generate-panel').style.display = 'none';
+            document.getElementById('history-panel').style.display = 'none';
+            document.getElementById('config-panel').style.display = 'none';
+            document.getElementById(`${tab}-panel`).style.display = 'block';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const tabIndex = { 'generate': 0, 'history': 1, 'config': 2 };
+            document.querySelectorAll('.tab')[tabIndex[tab]].classList.add('active');
+        }
+        
+        async function checkProxyStatus() {
+            try {
+                const resp = await fetch(`${API_BASE}/health`, { method: 'GET' });
+                const data = await resp.json();
+                document.getElementById('proxyStatus').innerHTML = 
+                    `<span style="color: #4CAF50;">✅ 运行正常 - ${data.message}</span>`;
+            } catch (e) {
+                document.getElementById('proxyStatus').innerHTML = 
+                    `<span style="color: #ff6b6b;">❌ 未连接 - 请先运行 proxy_server.py</span>`;
+            }
+        }
+        
+        async function generateImage() {
+            const apiKey = localStorage.getItem('apimart_api_key');
+            if (!apiKey) {
+                showError('请先在"API设置"中配置你的 APIMart API Key');
+                switchTab('config');
+                return;
+            }
+            
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) { showError('请输入图片描述'); return; }
+            
+            const model = document.getElementById('model').value;
+            const size = document.getElementById('size').value;
+            
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('statusText').textContent = '进度: 0%';
+            document.getElementById('loadingText').textContent = '正在提交任务...';
+            
+            try {
+                // 1. 提交任务
+                const submitResp = await fetch(`${API_BASE}/api/images/generations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model, prompt, size, n: 1 })
+                });
+                
+                const submitData = await submitResp.json();
+                
+                if (!submitResp.ok || submitData.code !== 200) {
+                    throw new Error(submitData.message || `提交失败: ${submitResp.status}`);
+                }
+                
+                currentTaskId = submitData.data[0].task_id;
+                document.getElementById('loadingText').textContent = '任务已提交，正在生成...';
+                
+                // 2. 轮询查询状态
+                const result = await pollTaskStatus(currentTaskId, apiKey);
+                
+                // 3. 显示结果
+                currentImageUrl = result.images[0].url[0];
+                document.getElementById('resultImage').src = currentImageUrl;
+                document.getElementById('result').style.display = 'block';
+                addToHistory(prompt, currentImageUrl, size, model);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+        
+        async function pollTaskStatus(taskId, apiKey) {
+            const maxAttempts = 60;
+            const interval = 2000;
+            
+            for (let i = 0; i < maxAttempts; i++) {
+                const resp = await fetch(`${API_BASE}/api/tasks/${taskId}`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                
+                const data = await resp.json();
+                
+                if (data.code !== 200) {
+                    throw new Error(data.message || '查询任务状态失败');
+                }
+                
+                const task = data.data;
+                const progress = task.progress || 0;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('statusText').textContent = `进度: ${progress}% - ${task.status}`;
+                
+                if (task.status === 'completed') {
+                    return task.result;
+                } else if (task.status === 'failed') {
+                    throw new Error(task.error || '任务生成失败，请稍后再试');
+                }
+                
+                await new Promise(r => setTimeout(r, interval));
+            }
+            
+            throw new Error('任务超时，请稍后到历史记录中查看');
+        }
+        
+        function showError(message) {
+            document.getElementById('error').textContent = '❌ ' + message;
+            document.getElementById('error').style.display = 'block';
+        }
+        
+        function downloadImage() {
+            if (!currentImageUrl) return;
+            const link = document.createElement('a');
+            link.href = currentImageUrl;
+            link.download = `ai-image-${Date.now()}.png`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function addToHistory(prompt, url, size, model) {
+            let history = JSON.parse(localStorage.getItem('image_history') || '[]');
+            history.unshift({ prompt, url, size, model, time: new Date().toLocaleString('zh-CN') });
+            history = history.slice(0, 20);
+            localStorage.setItem('image_history', JSON.stringify(history));
+            loadHistory();
+        }
+        
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('image_history') || '[]');
+            const container = document.getElementById('history');
+            
+            if (history.length === 0) {
+                container.innerHTML = '<p style="color: #888; text-align: center;">暂无历史记录</p>';
+                return;
+            }
+            
+            container.innerHTML = history.map((item, index) => `
+                <div class="history-item" onclick="viewHistory(${index})">
+                    <img src="${item.url}" alt="历史图片" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%23333%22 width=%22100%22 height=%22100%22/><text fill=%22%23666%22 x=%2250%22 y=%2250%22 text-anchor=%22middle%22>已过期</text></svg>'">
+                    <div class="prompt">${item.model} | ${item.prompt}</div>
+                </div>
+            `).join('');
+        }
+        
+        function viewHistory(index) {
+            const history = JSON.parse(localStorage.getItem('image_history') || '[]');
+            const item = history[index];
+            if (item) {
+                currentImageUrl = item.url;
+                document.getElementById('prompt').value = item.prompt;
+                document.getElementById('size').value = item.size;
+                document.getElementById('model').value = item.model;
+                document.getElementById('resultImage').src = item.url;
+                document.getElementById('result').style.display = 'block';
+                switchTab('generate');
+            }
+        }
+    </script>
+</body>
+</html>
