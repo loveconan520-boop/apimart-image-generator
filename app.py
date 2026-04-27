@@ -1198,8 +1198,14 @@ HTML_CONTENT = '''<!DOCTYPE html>
         }
         
         async function generateImage() {
-            const apiKey = localStorage.getItem('apimart_api_key');
-            if (!apiKey) {
+            let apiKey = localStorage.getItem('apimart_api_key') || '';
+            const apiKeyInput = document.getElementById('apiKey');
+            // 如果输入框没被禁用（用户自己输入的Key），优先使用输入框的值
+            if (!apiKeyInput.disabled && apiKeyInput.value.trim()) {
+                apiKey = apiKeyInput.value.trim();
+            }
+            // 如果没有用户Key，发送空字符串，后端会用环境变量默认Key
+            if (!apiKey && !apiKeyInput.disabled) {
                 showError('请先在"API设置"中配置你的 APIMart API Key');
                 switchTab('config');
                 return;
