@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-APIMart Image Generator - 一体化应用
-支持文生图 + 图生图
-"""
+APIMart Image Generator - 涓€浣撳寲搴旂敤
+鏀寔鏂囩敓鍥?+ 鍥剧敓鍥?"""
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
@@ -13,7 +12,7 @@ import threading
 import base64
 import io
 
-# 创建不读取系统代理环境的 session
+# 鍒涘缓涓嶈鍙栫郴缁熶唬鐞嗙幆澧冪殑 session
 requests_session = requests.Session()
 requests_session.trust_env = False
 
@@ -26,7 +25,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 图像生成器 - APIMart</title>
+    <title>AI 鍥惧儚鐢熸垚鍣?- APIMart</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -784,98 +783,95 @@ HTML_CONTENT = '''<!DOCTYPE html>
     </style>
 </head>
 <body>
-    <!-- 密码验证层 -->
+    <!-- 瀵嗙爜楠岃瘉灞?-->
     <div id="passwordOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0f0a1a 100%); z-index: 10000; display: flex; align-items: center; justify-content: center;">
         <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 40px; max-width: 400px; width: 90%; text-align: center; backdrop-filter: blur(20px);">
-            <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
-            <h2 style="color: #fff; margin-bottom: 10px; font-size: 24px;">访问受限</h2>
-            <p style="color: #94a3b8; margin-bottom: 30px; font-size: 14px;">请输入密码以继续使用</p>
-            <input type="password" id="passwordInput" placeholder="输入密码..." style="width: 100%; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.3); color: #fff; font-size: 15px; margin-bottom: 16px; text-align: center;">
-            <button onclick="checkPassword()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;">进入系统</button>
-            <p id="passwordError" style="color: #f43f5e; margin-top: 16px; font-size: 14px; display: none;">密码错误，请重试</p>
+            <div style="font-size: 48px; margin-bottom: 20px;">馃敀</div>
+            <h2 style="color: #fff; margin-bottom: 10px; font-size: 24px;">璁块棶鍙楅檺</h2>
+            <p style="color: #94a3b8; margin-bottom: 30px; font-size: 14px;">璇疯緭鍏ュ瘑鐮佷互缁х画浣跨敤</p>
+            <input type="password" id="passwordInput" placeholder="杈撳叆瀵嗙爜..." style="width: 100%; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(0,0,0,0.3); color: #fff; font-size: 15px; margin-bottom: 16px; text-align: center;">
+            <button onclick="checkPassword()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #f97316 0%, #ec4899 100%); border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;">杩涘叆绯荤粺</button>
+            <p id="passwordError" style="color: #f43f5e; margin-top: 16px; font-size: 14px; display: none;">瀵嗙爜閿欒锛岃閲嶈瘯</p>
         </div>
     </div>
 
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">☀️</button>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="鍒囨崲涓婚">鈽€锔?/button>
     <div class="container" id="mainContainer" style="display: none;">
         <div class="header">
             <div class="logo">
-                <div class="logo-icon">✨</div>
-                <h1>AI 图像生成器</h1>
+                <div class="logo-icon">鉁?/div>
+                <h1>AI 鍥惧儚鐢熸垚鍣?/h1>
             </div>
-            <p class="subtitle">基于 APIMart 的强大 AI 图像生成服务</p>
+            <p class="subtitle">鍩轰簬 APIMart 鐨勫己澶?AI 鍥惧儚鐢熸垚鏈嶅姟</p>
         </div>
         
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('generate')">🎨 生成图片</button>
-            <button class="tab" onclick="switchTab('history')">📷 历史记录</button>
-            <button class="tab" onclick="switchTab('config')">⚙️ API设置</button>
+            <button class="tab active" onclick="switchTab('generate')">馃帹 鐢熸垚鍥剧墖</button>
+            <button class="tab" onclick="switchTab('history')">馃摲 鍘嗗彶璁板綍</button>
+            <button class="tab" onclick="switchTab('config')">鈿欙笍 API璁剧疆</button>
         </div>
         
         <div id="generate-panel" class="panel active">
             <div class="card">
                 <div class="mode-tabs">
                     <button class="mode-tab active" onclick="switchMode('text')" id="tab-text">
-                        <span>📝</span> 文生图
-                    </button>
+                        <span>馃摑</span> 鏂囩敓鍥?                    </button>
                     <button class="mode-tab" onclick="switchMode('image')" id="tab-image">
-                        <span>🖼️</span> 图生图
-                    </button>
+                        <span>馃柤锔?/span> 鍥剧敓鍥?                    </button>
                 </div>
                 
                 <div id="text-mode-panel">
                     <div class="form-group">
-                        <label>描述你想要的内容</label>
-                        <textarea id="prompt" placeholder="例如：反骨西游海报，孙悟空金甲红袍，手持金箍棒，动漫风格..."></textarea>
+                        <label>鎻忚堪浣犳兂瑕佺殑鍐呭</label>
+                        <textarea id="prompt" placeholder="渚嬪锛氬弽楠ㄨタ娓告捣鎶ワ紝瀛欐偀绌洪噾鐢茬孩琚嶏紝鎵嬫寔閲戠畭妫掞紝鍔ㄦ极椋庢牸..."></textarea>
                         <div class="quick-prompts">
-                            <span class="quick-prompt" onclick="setPrompt('孙悟空')">孙悟空</span>
-                            <span class="quick-prompt" onclick="setPrompt('杨戬')">杨戬</span>
-                            <span class="quick-prompt" onclick="setPrompt('哪吒')">哪吒</span>
-                            <span class="quick-prompt" onclick="setPrompt('反骨西游海报')">反骨西游</span>
-                            <span class="quick-prompt" onclick="setPrompt('天庭场景')">天庭场景</span>
+                            <span class="quick-prompt" onclick="setPrompt('瀛欐偀绌?)">瀛欐偀绌?/span>
+                            <span class="quick-prompt" onclick="setPrompt('鏉ㄦ埇')">鏉ㄦ埇</span>
+                            <span class="quick-prompt" onclick="setPrompt('鍝悞')">鍝悞</span>
+                            <span class="quick-prompt" onclick="setPrompt('鍙嶉瑗挎父娴锋姤')">鍙嶉瑗挎父</span>
+                            <span class="quick-prompt" onclick="setPrompt('澶╁涵鍦烘櫙')">澶╁涵鍦烘櫙</span>
                         </div>
                     </div>
                 </div>
                 
                 <div id="image-mode-panel" style="display: none;">
                     <div class="form-group">
-                        <label>上传参考图 <span id="imageCount" style="color: var(--primary-light); font-size: 12px;">(0/5)</span></label>
+                        <label>涓婁紶鍙傝€冨浘 <span id="imageCount" style="color: var(--primary-light); font-size: 12px;">(0/5)</span></label>
                         <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageInput').click()">
                             <div class="upload-text" id="uploadText">
-                                <div class="upload-icon">📤</div>
-                                <h4>点击上传图片</h4>
-                                <p>或拖拽到此处，支持多图上传 (最多5张)</p>
+                                <div class="upload-icon">馃摛</div>
+                                <h4>鐐瑰嚮涓婁紶鍥剧墖</h4>
+                                <p>鎴栨嫋鎷藉埌姝ゅ锛屾敮鎸佸鍥句笂浼?(鏈€澶?寮?</p>
                             </div>
                         </div>
                         <input type="file" id="imageInput" accept="image/*" multiple onchange="handleImageUpload(event)">
                         
-                        <!-- 多图预览区域 -->
+                        <!-- 澶氬浘棰勮鍖哄煙 -->
                         <div class="image-preview-grid" id="imagePreviewGrid" style="display: none;">
-                            <!-- 动态生成的预览图将放在这里 -->
+                            <!-- 鍔ㄦ€佺敓鎴愮殑棰勮鍥惧皢鏀惧湪杩欓噷 -->
                         </div>
                         
                         <div class="upload-actions" id="uploadActions" style="display: none; margin-top: 12px;">
                             <button type="button" class="btn-secondary" onclick="clearAllImages()" style="width: auto; padding: 8px 16px; font-size: 13px;">
-                                🗑️ 清空所有
-                            </button>
+                                馃棏锔?娓呯┖鎵€鏈?                            </button>
                             <button type="button" class="btn-secondary" onclick="document.getElementById('imageInput').click()" style="width: auto; padding: 8px 16px; font-size: 13px;">
-                                ➕ 继续添加
+                                鉃?缁х画娣诲姞
                             </button>
                         </div>
                     </div>
                     
                     <div class="form-group">
-                        <label>图片修改描述</label>
-                        <textarea id="imagePrompt" placeholder="描述你想如何修改这些图片，例如：将所有角色融合成一张海报、转换为动漫风格、增加金色光芒效果..."></textarea>
+                        <label>鍥剧墖淇敼鎻忚堪</label>
+                        <textarea id="imagePrompt" placeholder="鎻忚堪浣犳兂濡備綍淇敼杩欎簺鍥剧墖锛屼緥濡傦細灏嗘墍鏈夎鑹茶瀺鍚堟垚涓€寮犳捣鎶ャ€佽浆鎹负鍔ㄦ极椋庢牸銆佸鍔犻噾鑹插厜鑺掓晥鏋?.."></textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label>参考强度</label>
+                        <label>鍙傝€冨己搴?/label>
                         <input type="range" id="strength" class="strength-slider" min="0.1" max="1.0" step="0.1" value="0.7" oninput="updateStrengthLabel(this.value)">
                         <div class="strength-labels">
-                            <span>保留原图</span>
+                            <span>淇濈暀鍘熷浘</span>
                             <span id="strengthValue">0.7</span>
-                            <span>完全重绘</span>
+                            <span>瀹屽叏閲嶇粯</span>
                         </div>
                     </div>
                 </div>
@@ -883,73 +879,73 @@ HTML_CONTENT = '''<!DOCTYPE html>
                 <div class="row">
                     <div class="col">
                         <div class="form-group">
-                            <label>模型</label>
+                            <label>妯″瀷</label>
                             <select id="model" onchange="handleModelChange()">
-                                <option value="flux-2-pro" selected>flux-2-pro (推荐)</option>
+                                <option value="flux-2-pro" selected>flux-2-pro (鎺ㄨ崘)</option>
                                 <option value="gpt-image-2">gpt-image-2</option>
                             </select>
-                            <small id="modelHint" style="display: none;">图生图模式强制使用 gpt-image-2 模型</small>
+                            <small id="modelHint" style="display: none;">鍥剧敓鍥炬ā寮忓己鍒朵娇鐢?gpt-image-2 妯″瀷</small>
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-group">
-                            <label>图片尺寸</label>
+                            <label>鍥剧墖灏哄</label>
                             <select id="size">
-                                <option value="1024x1024">正方形 1024×1024</option>
-                                <option value="1024x1536">竖版 1024×1536</option>
-                                <option value="1536x1024" selected>横版 1536×1024</option>
+                                <option value="1024x1024">姝ｆ柟褰?1024脳1024</option>
+                                <option value="1024x1536">绔栫増 1024脳1536</option>
+                                <option value="1536x1024" selected>妯増 1536脳1024</option>
                             </select>
                         </div>
                     </div>
                 </div>
                 
                 <button class="btn-primary" id="generateBtn" onclick="generateImage()">
-                    ✨ 生成图片
+                    鉁?鐢熸垚鍥剧墖
                 </button>
                 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
-                    <p id="loadingText">正在提交任务...</p>
+                    <p id="loadingText">姝ｅ湪鎻愪氦浠诲姟...</p>
                     <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
-                    <p class="status-text" id="statusText">进度: 0%</p>
+                    <p class="status-text" id="statusText">杩涘害: 0%</p>
                 </div>
             </div>
             
             <div class="card result" id="result" style="display: none;">
-                <img id="resultImage" src="" alt="生成结果">
-                <button class="btn-primary" onclick="downloadImage()">⬇️ 下载图片</button>
+                <img id="resultImage" src="" alt="鐢熸垚缁撴灉">
+                <button class="btn-primary" onclick="downloadImage()">猬囷笍 涓嬭浇鍥剧墖</button>
             </div>
             
             <div class="error" id="error" style="display: none;"></div>
             
             <div class="model-info">
-                <strong>💡 使用提示</strong><br>
-                • <b>文生图</b>：输入文字描述，AI 从零生成图片<br>
-                • <b>图生图</b>：上传参考图 + 描述，AI 基于原图进行修改<br>
-                • <b>flux-2-pro</b>：生成速度快，质量高，推荐日常使用<br>
-                • <b>gpt-image-2</b>：OpenAI 官方模型，支持更多高级功能<br>
-                • 图片链接有效期 24 小时，请及时下载保存
+                <strong>馃挕 浣跨敤鎻愮ず</strong><br>
+                鈥?<b>鏂囩敓鍥?/b>锛氳緭鍏ユ枃瀛楁弿杩帮紝AI 浠庨浂鐢熸垚鍥剧墖<br>
+                鈥?<b>鍥剧敓鍥?/b>锛氫笂浼犲弬鑰冨浘 + 鎻忚堪锛孉I 鍩轰簬鍘熷浘杩涜淇敼<br>
+                鈥?<b>flux-2-pro</b>锛氱敓鎴愰€熷害蹇紝璐ㄩ噺楂橈紝鎺ㄨ崘鏃ュ父浣跨敤<br>
+                鈥?<b>gpt-image-2</b>锛歄penAI 瀹樻柟妯″瀷锛屾敮鎸佹洿澶氶珮绾у姛鑳?br>
+                鈥?鍥剧墖閾炬帴鏈夋晥鏈?24 灏忔椂锛岃鍙婃椂涓嬭浇淇濆瓨
             </div>
         </div>
         
         <div id="history-panel" class="panel">
             <div class="card">
-                <h3 style="color: var(--primary-light); margin-bottom: 20px; font-weight: 600;">📷 历史记录</h3>
+                <h3 style="color: var(--primary-light); margin-bottom: 20px; font-weight: 600;">馃摲 鍘嗗彶璁板綍</h3>
                 <div class="history" id="history"></div>
             </div>
         </div>
         
         <div id="config-panel" class="panel">
             <div class="card">
-                <h3 style="color: var(--primary-light); margin-bottom: 24px; font-weight: 600;">⚙️ API 设置</h3>
+                <h3 style="color: var(--primary-light); margin-bottom: 24px; font-weight: 600;">鈿欙笍 API 璁剧疆</h3>
                 <div class="form-group">
                     <label>APIMart API Key</label>
                     <input type="password" id="apiKey" placeholder="sk-...">
                     <small style="color: var(--text-muted); display: block; margin-top: 8px;">
-                        从 <a href="https://apimart.ai" target="_blank" style="color: var(--primary-light);">apimart.ai</a> 获取你的 API Key
+                        浠?<a href="https://apimart.ai" target="_blank" style="color: var(--primary-light);">apimart.ai</a> 鑾峰彇浣犵殑 API Key
                     </small>
                 </div>
-                <button class="btn-primary" onclick="saveConfig()">保存配置</button>
+                <button class="btn-primary" onclick="saveConfig()">淇濆瓨閰嶇疆</button>
             </div>
         </div>
     </div>
@@ -958,7 +954,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
         let currentImageUrl = '';
         let currentTaskId = '';
         let currentMode = 'text';
-        let uploadedImages = []; // 存储多图 {name, base64, preview}
+        let uploadedImages = []; // 瀛樺偍澶氬浘 {name, base64, preview}
         const MAX_IMAGES = 5;
         const ACCESS_PASSWORD = "athena80127678!";
         
@@ -1013,8 +1009,8 @@ HTML_CONTENT = '''<!DOCTYPE html>
         
         function updateThemeIcon(theme) {
             const btn = document.getElementById('themeToggle');
-            btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-            btn.title = theme === 'dark' ? '切换到白天模式' : '切换到夜间模式';
+            btn.textContent = theme === 'dark' ? '鈽€锔? : '馃寵';
+            btn.title = theme === 'dark' ? '鍒囨崲鍒扮櫧澶╂ā寮? : '鍒囨崲鍒板闂存ā寮?;
         }
         
         document.addEventListener('DOMContentLoaded', () => {
@@ -1041,12 +1037,12 @@ HTML_CONTENT = '''<!DOCTYPE html>
         function loadConfig() {
             const apiKey = localStorage.getItem('apimart_api_key');
             if (apiKey) document.getElementById('apiKey').value = apiKey;
-            // 检查服务器是否有默认 API Key
+            // 妫€鏌ユ湇鍔″櫒鏄惁鏈夐粯璁?API Key
             fetch('/api/config')
                 .then(r => r.json())
                 .then(data => {
                     if (data.hasDefaultKey && !apiKey) {
-                        document.getElementById('apiKey').value = '(使用服务器默认 Key)';
+                        document.getElementById('apiKey').value = '(浣跨敤鏈嶅姟鍣ㄩ粯璁?Key)';
                         document.getElementById('apiKey').type = 'text';
                         document.getElementById('apiKey').disabled = true;
                     }
@@ -1056,18 +1052,18 @@ HTML_CONTENT = '''<!DOCTYPE html>
         
         function saveConfig() {
             const apiKey = document.getElementById('apiKey').value.trim();
-            if (!apiKey) { alert('请输入 API Key'); return; }
+            if (!apiKey) { alert('璇疯緭鍏?API Key'); return; }
             localStorage.setItem('apimart_api_key', apiKey);
-            alert('API Key 已保存！');
+            alert('API Key 宸蹭繚瀛橈紒');
         }
         
         function setPrompt(text) {
             const prompts = {
-                '孙悟空': '孙悟空角色设定图，金甲红袍，头戴紫金冠，手持如意金箍棒，动漫风格，精细画质',
-                '杨戬': '杨戬角色设定图，银甲战袍，第三只眼，天眼开阔，手持三尖两刃刀，动漫风格',
-                '哪吒': '哪吒角色设定图，混天绫环绕，乾坤圈在手，脚踩风火轮，动漫少年形象',
-                '反骨西游海报': '反骨西游团队海报，悟空、杨戬、哪吒并肩站立，反抗天庭，炫酷动漫风格',
-                '天庭场景': '天庭场景，云雾缭绕，金碧辉煌的建筑，宏伟壮观，东方奇幻风格'
+                '瀛欐偀绌?: '瀛欐偀绌鸿鑹茶瀹氬浘锛岄噾鐢茬孩琚嶏紝澶存埓绱噾鍐狅紝鎵嬫寔濡傛剰閲戠畭妫掞紝鍔ㄦ极椋庢牸锛岀簿缁嗙敾璐?,
+                '鏉ㄦ埇': '鏉ㄦ埇瑙掕壊璁惧畾鍥撅紝閾剁敳鎴樿锛岀涓夊彧鐪硷紝澶╃溂寮€闃旓紝鎵嬫寔涓夊皷涓ゅ垉鍒€锛屽姩婕鏍?,
+                '鍝悞': '鍝悞瑙掕壊璁惧畾鍥撅紝娣峰ぉ缁幆缁曪紝涔惧潳鍦堝湪鎵嬶紝鑴氳俯椋庣伀杞紝鍔ㄦ极灏戝勾褰㈣薄',
+                '鍙嶉瑗挎父娴锋姤': '鍙嶉瑗挎父鍥㈤槦娴锋姤锛屾偀绌恒€佹潹鎴€佸摢鍚掑苟鑲╃珯绔嬶紝鍙嶆姉澶╁涵锛岀偒閰峰姩婕鏍?,
+                '澶╁涵鍦烘櫙': '澶╁涵鍦烘櫙锛屼簯闆剧辑缁曪紝閲戠ⅶ杈夌厡鐨勫缓绛戯紝瀹忎紵澹锛屼笢鏂瑰骞婚鏍?
             };
             const targetId = currentMode === 'text' ? 'prompt' : 'imagePrompt';
             document.getElementById(targetId).value = prompts[text] || text;
@@ -1114,7 +1110,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
         function handleFiles(files) {
             const remainingSlots = MAX_IMAGES - uploadedImages.length;
             if (remainingSlots <= 0) {
-                alert(`最多只能上传 ${MAX_IMAGES} 张图片`);
+                alert(`鏈€澶氬彧鑳戒笂浼?${MAX_IMAGES} 寮犲浘鐗嘸);
                 return;
             }
             
@@ -1124,7 +1120,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
             for (let i = 0; i < filesToProcess; i++) {
                 const file = files[i];
                 if (!file.type.startsWith('image/')) {
-                    alert(`${file.name} 不是图片文件，已跳过`);
+                    alert(`${file.name} 涓嶆槸鍥剧墖鏂囦欢锛屽凡璺宠繃`);
                     continue;
                 }
                 
@@ -1144,7 +1140,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
             }
             
             if (files.length > remainingSlots) {
-                alert(`已添加 ${filesToProcess} 张图片，超出 ${MAX_IMAGES} 张限制的部分已忽略`);
+                alert(`宸叉坊鍔?${filesToProcess} 寮犲浘鐗囷紝瓒呭嚭 ${MAX_IMAGES} 寮犻檺鍒剁殑閮ㄥ垎宸插拷鐣);
             }
         }
         
@@ -1154,7 +1150,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
             const uploadActions = document.getElementById('uploadActions');
             const imageCount = document.getElementById('imageCount');
             
-            // 更新计数
+            // 鏇存柊璁℃暟
             imageCount.textContent = `(${uploadedImages.length}/${MAX_IMAGES})`;
             
             if (uploadedImages.length === 0) {
@@ -1165,20 +1161,19 @@ HTML_CONTENT = '''<!DOCTYPE html>
                 return;
             }
             
-            // 隐藏上传区域，显示预览和操作按钮
+            // 闅愯棌涓婁紶鍖哄煙锛屾樉绀洪瑙堝拰鎿嶄綔鎸夐挳
             uploadArea.style.display = 'none';
             grid.style.display = 'grid';
             uploadActions.style.display = 'flex';
             
-            // 清空并重建预览
-            grid.innerHTML = '';
+            // 娓呯┖骞堕噸寤洪瑙?            grid.innerHTML = '';
             uploadedImages.forEach((img, index) => {
                 const item = document.createElement('div');
                 item.className = 'preview-item';
                 item.innerHTML = `
                     <img src="${img.preview}" alt="${img.name}">
                     <span class="image-index">#${index + 1}</span>
-                    <button class="remove-btn" onclick="removeImage(${index})" title="删除">×</button>
+                    <button class="remove-btn" onclick="removeImage(${index})" title="鍒犻櫎">脳</button>
                 `;
                 grid.appendChild(item);
             });
@@ -1191,16 +1186,21 @@ HTML_CONTENT = '''<!DOCTYPE html>
         
         function clearAllImages() {
             if (uploadedImages.length === 0) return;
-            if (confirm(`确定要清空所有 ${uploadedImages.length} 张图片吗？`)) {
+            if (confirm(`纭畾瑕佹竻绌烘墍鏈?${uploadedImages.length} 寮犲浘鐗囧悧锛焋)) {
                 uploadedImages = [];
                 updateImagePreview();
             }
         }
         
         async function generateImage() {
-            const apiKey = localStorage.getItem('apimart_api_key');
-            if (!apiKey) {
-                showError('请先在"API设置"中配置你的 APIMart API Key');
+            let apiKey = localStorage.getItem('apimart_api_key') || '';
+            const apiKeyInput = document.getElementById('apiKey');
+            // 濡傛灉杈撳叆妗嗘病琚鐢紙鐢ㄦ埛鑷繁杈撳叆鐨凨ey锛夛紝浼樺厛浣跨敤杈撳叆妗嗙殑鍊?            if (!apiKeyInput.disabled && apiKeyInput.value.trim()) {
+                apiKey = apiKeyInput.value.trim();
+            }
+            // 濡傛灉娌℃湁鐢ㄦ埛Key锛屽彂閫佺┖瀛楃涓诧紝鍚庣浼氱敤鐜鍙橀噺榛樿Key
+            if (!apiKey && !apiKeyInput.disabled) {
+                showError('璇峰厛鍦?API璁剧疆"涓厤缃綘鐨?APIMart API Key');
                 switchTab('config');
                 return;
             }
@@ -1212,12 +1212,11 @@ HTML_CONTENT = '''<!DOCTYPE html>
             
             if (currentMode === 'text') {
                 prompt = document.getElementById('prompt').value.trim();
-                if (!prompt) { showError('请输入图片描述'); return; }
+                if (!prompt) { showError('璇疯緭鍏ュ浘鐗囨弿杩?); return; }
             } else {
                 prompt = document.getElementById('imagePrompt').value.trim();
-                if (uploadedImages.length === 0) { showError('请至少上传一张参考图片'); return; }
-                // 多图模式：发送图片数组
-                imageData = uploadedImages.map(img => img.base64);
+                if (uploadedImages.length === 0) { showError('璇疯嚦灏戜笂浼犱竴寮犲弬鑰冨浘鐗?); return; }
+                // 澶氬浘妯″紡锛氬彂閫佸浘鐗囨暟缁?                imageData = uploadedImages.map(img => img.base64);
                 strength = document.getElementById('strength').value;
             }
             
@@ -1226,18 +1225,17 @@ HTML_CONTENT = '''<!DOCTYPE html>
             document.getElementById('error').style.display = 'none';
             document.getElementById('generateBtn').disabled = true;
             document.getElementById('progressFill').style.width = '0%';
-            document.getElementById('statusText').textContent = '进度: 0%';
-            document.getElementById('loadingText').textContent = '正在提交任务...';
+            document.getElementById('statusText').textContent = '杩涘害: 0%';
+            document.getElementById('loadingText').textContent = '姝ｅ湪鎻愪氦浠诲姟...';
             
             try {
                 const body = { apiKey, prompt, size };
                 if (currentMode === 'image') {
                     body.mode = 'image';
-                    // 支持单图或多图
-                    if (Array.isArray(imageData) && imageData.length > 1) {
-                        body.images = imageData; // 多图
+                    // 鏀寔鍗曞浘鎴栧鍥?                    if (Array.isArray(imageData) && imageData.length > 1) {
+                        body.images = imageData; // 澶氬浘
                     } else {
-                        body.image = Array.isArray(imageData) ? imageData[0] : imageData; // 单图兼容
+                        body.image = Array.isArray(imageData) ? imageData[0] : imageData; // 鍗曞浘鍏煎
                     }
                     body.strength = parseFloat(strength);
                     body.model = 'gpt-image-2';
@@ -1254,11 +1252,11 @@ HTML_CONTENT = '''<!DOCTYPE html>
                 const submitData = await submitResp.json();
                 
                 if (!submitResp.ok || submitData.error) {
-                    throw new Error(submitData.error || `提交失败: ${submitResp.status}`);
+                    throw new Error(submitData.error || `鎻愪氦澶辫触: ${submitResp.status}`);
                 }
                 
                 currentTaskId = submitData.taskId;
-                document.getElementById('loadingText').textContent = '任务已提交，正在生成...';
+                document.getElementById('loadingText').textContent = '浠诲姟宸叉彁浜わ紝姝ｅ湪鐢熸垚...';
                 
                 const result = await pollTaskStatus(currentTaskId, apiKey);
                 
@@ -1293,19 +1291,19 @@ HTML_CONTENT = '''<!DOCTYPE html>
                 const task = data.task;
                 const progress = task.progress || 0;
                 document.getElementById('progressFill').style.width = `${progress}%`;
-                document.getElementById('statusText').textContent = `进度: ${progress}% - ${task.status}`;
+                document.getElementById('statusText').textContent = `杩涘害: ${progress}% - ${task.status}`;
                 
                 if (task.status === 'completed') return task.result;
-                else if (task.status === 'failed') throw new Error(task.error || '任务生成失败');
+                else if (task.status === 'failed') throw new Error(task.error || '浠诲姟鐢熸垚澶辫触');
                 
                 await new Promise(r => setTimeout(r, interval));
             }
             
-            throw new Error('任务超时');
+            throw new Error('浠诲姟瓒呮椂');
         }
         
         function showError(message) {
-            document.getElementById('error').textContent = '⚠️ ' + message;
+            document.getElementById('error').textContent = '鈿狅笍 ' + message;
             document.getElementById('error').style.display = 'flex';
         }
         
@@ -1322,7 +1320,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
         
         function addToHistory(prompt, url, size, model, mode) {
             let history = JSON.parse(localStorage.getItem('image_history') || '[]');
-            const modeLabel = mode === 'text' ? '文生图' : '图生图';
+            const modeLabel = mode === 'text' ? '鏂囩敓鍥? : '鍥剧敓鍥?;
             history.unshift({ prompt, url, size, model, mode: modeLabel, time: new Date().toLocaleString('zh-CN') });
             history = history.slice(0, 20);
             localStorage.setItem('image_history', JSON.stringify(history));
@@ -1334,13 +1332,13 @@ HTML_CONTENT = '''<!DOCTYPE html>
             const container = document.getElementById('history');
             
             if (history.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">暂无历史记录</p>';
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">鏆傛棤鍘嗗彶璁板綍</p>';
                 return;
             }
             
             container.innerHTML = history.map((item, index) => `
                 <div class="history-item" onclick="viewHistory(${index})">
-                    <img src="${item.url}" alt="历史图片" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%231e293b%22 width=%22100%22 height=%22100%22/><text fill=%22%2364748b%22 x=%2250%22 y=%2250%22 text-anchor=%22middle%22>已过期</text></svg>'">
+                    <img src="${item.url}" alt="鍘嗗彶鍥剧墖" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%231e293b%22 width=%22100%22 height=%22100%22/><text fill=%22%2364748b%22 x=%2250%22 y=%2250%22 text-anchor=%22middle%22>宸茶繃鏈?/text></svg>'">
                     <div class="prompt">${item.mode} | ${item.model}</div>
                 </div>
             `).join('');
@@ -1377,7 +1375,7 @@ class APIHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(HTML_CONTENT.encode('utf-8'))
         elif self.path == '/api/config':
-            # 告诉前端是否有默认 API Key
+            # 鍛婅瘔鍓嶇鏄惁鏈夐粯璁?API Key
             has_default_key = bool(os.environ.get('APIMART_API_KEY', ''))
             self._send_json(200, {'hasDefaultKey': has_default_key})
         else:
@@ -1415,16 +1413,16 @@ class APIHandler(SimpleHTTPRequestHandler):
             request_data = {'model': model, 'prompt': prompt, 'size': size, 'n': 1}
             
             if mode == 'image':
-                # 支持多图上传
-                images_base64 = post_data.get('images')  # 多图数组
-                image_base64 = post_data.get('image')    # 单图兼容
+                # 鏀寔澶氬浘涓婁紶
+                images_base64 = post_data.get('images')  # 澶氬浘鏁扮粍
+                image_base64 = post_data.get('image')    # 鍗曞浘鍏煎
                 
                 image_urls = []
                 if images_base64 and isinstance(images_base64, list):
-                    # 多图模式
+                    # 澶氬浘妯″紡
                     image_urls = [f"data:image/png;base64,{img}" for img in images_base64]
                 elif image_base64:
-                    # 单图兼容模式
+                    # 鍗曞浘鍏煎妯″紡
                     image_urls = [f"data:image/png;base64,{image_base64}"]
                 else:
                     return self._send_json(400, {'error': 'Image data is required'})
@@ -1488,22 +1486,21 @@ class APIHandler(SimpleHTTPRequestHandler):
         print(f"[Server] {format % args}")
 
 def run_server(port=None):
-    # Render 使用环境变量 PORT
+    # Render 浣跨敤鐜鍙橀噺 PORT
     port = port or int(os.environ.get('PORT', 8080))
-    # 云平台需要绑定 0.0.0.0，本地开发绑定 127.0.0.1
+    # 浜戝钩鍙伴渶瑕佺粦瀹?0.0.0.0锛屾湰鍦板紑鍙戠粦瀹?127.0.0.1
     host = '0.0.0.0' if os.environ.get('PORT') or os.environ.get('RENDER') or os.environ.get('RAILWAY_SERVICE_ID') else '127.0.0.1'
     
     server = HTTPServer((host, port), APIHandler)
     
     print("=" * 60)
-    print("🎨 APIMart Image Generator")
+    print("馃帹 APIMart Image Generator")
     print("=" * 60)
-    print(f"\n🌐 服务器运行在: http://{host}:{port}")
-    print("\n⚙️  按 Ctrl+C 停止服务器")
+    print(f"\n馃寪 鏈嶅姟鍣ㄨ繍琛屽湪: http://{host}:{port}")
+    print("\n鈿欙笍  鎸?Ctrl+C 鍋滄鏈嶅姟鍣?)
     print("=" * 60 + "\n")
     
-    # 本地开发时自动打开浏览器
-    if host == '127.0.0.1':
+    # 鏈湴寮€鍙戞椂鑷姩鎵撳紑娴忚鍣?    if host == '127.0.0.1':
         def open_browser():
             import time
             time.sleep(1)
@@ -1513,7 +1510,7 @@ def run_server(port=None):
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n\n[Stop] 服务器已停止")
+        print("\n\n[Stop] 鏈嶅姟鍣ㄥ凡鍋滄")
 
 if __name__ == '__main__':
     run_server()
