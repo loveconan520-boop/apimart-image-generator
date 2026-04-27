@@ -1041,6 +1041,17 @@ HTML_CONTENT = '''<!DOCTYPE html>
         function loadConfig() {
             const apiKey = localStorage.getItem('apimart_api_key');
             if (apiKey) document.getElementById('apiKey').value = apiKey;
+            // 检查服务器是否有默认 API Key
+            fetch('/api/config')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.hasDefaultKey && !apiKey) {
+                        document.getElementById('apiKey').value = '(使用服务器默认 Key)';
+                        document.getElementById('apiKey').type = 'text';
+                        document.getElementById('apiKey').disabled = true;
+                    }
+                })
+                .catch(() => {});
         }
         
         function saveConfig() {
@@ -1365,6 +1376,10 @@ class APIHandler(SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
             self.wfile.write(HTML_CONTENT.encode('utf-8'))
+        elif self.path == '/api/config':
+            # 告诉前端是否有默认 API Key
+            has_default_key = bool(os.environ.get('APIMART_API_KEY', ''))
+            self._send_json(200, {'hasDefaultKey': has_default_key})
         else:
             super().do_GET()
     
@@ -1388,7 +1403,7 @@ class APIHandler(SimpleHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = json.loads(self.rfile.read(content_length))
             
-            api_key = post_data.get('apiKey')
+            api_key = post_data.get('apiKey') or os.environ.get('APIMART_API_KEY', '')
             model = post_data.get('model', 'flux-2-pro')
             prompt = post_data.get('prompt')
             size = post_data.get('size', '1024x1024')
@@ -1446,7 +1461,7 @@ class APIHandler(SimpleHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = json.loads(self.rfile.read(content_length))
             
-            api_key = post_data.get('apiKey')
+            api_key = post_data.get('apiKey') or os.environ.get('APIMART_API_KEY', '')
             task_id = post_data.get('taskId')
             
             if not api_key or not task_id:
