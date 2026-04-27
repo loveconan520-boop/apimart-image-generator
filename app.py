@@ -1475,8 +1475,8 @@ class APIHandler(SimpleHTTPRequestHandler):
 def run_server(port=None):
     # Render 使用环境变量 PORT
     port = port or int(os.environ.get('PORT', 8080))
-    # Render 需要绑定 0.0.0.0
-    host = '0.0.0.0' if os.environ.get('RENDER') else '127.0.0.1'
+    # 云平台需要绑定 0.0.0.0，本地开发绑定 127.0.0.1
+    host = '0.0.0.0' if os.environ.get('PORT') or os.environ.get('RENDER') or os.environ.get('RAILWAY_SERVICE_ID') else '127.0.0.1'
     
     server = HTTPServer((host, port), APIHandler)
     
