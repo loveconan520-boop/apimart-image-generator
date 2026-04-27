@@ -1486,10 +1486,11 @@ class APIHandler(SimpleHTTPRequestHandler):
         print(f"[Server] {format % args}")
 
 def run_server(port=None):
-    # Render 浣跨敤鐜鍙橀噺 PORT
-    port = port or int(os.environ.get('PORT', 8080))
+    # 浜戝钩鍙颁娇鐢ㄧ幆澧冨彉閲?PORT (Render/Railway 绛?
+    port = int(os.environ.get('PORT', port or 8080))
     # 浜戝钩鍙伴渶瑕佺粦瀹?0.0.0.0锛屾湰鍦板紑鍙戠粦瀹?127.0.0.1
-    host = '0.0.0.0' if os.environ.get('PORT') or os.environ.get('RENDER') or os.environ.get('RAILWAY_SERVICE_ID') else '127.0.0.1'
+    is_cloud = os.environ.get('PORT') or os.environ.get('RENDER') or os.environ.get('RAILWAY_SERVICE_ID')
+    host = '0.0.0.0' if is_cloud else '127.0.0.1'
     
     server = HTTPServer((host, port), APIHandler)
     
